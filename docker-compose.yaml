@@ -1,0 +1,52 @@
+version: '3'
+services:
+  drone-server:
+    image: drone/drone:latest
+    ports:
+      - "40080:80"
+      - 40443:443
+      - 9000
+    volumes:
+      - ./data/drone:/var/lib/drone/
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DRONE_OPEN=true
+      - DRONE_SERVER_HOST=drone-server
+      - DRONE_DEBUG=true
+      - DRONE_GIT_ALWAYS_AUTH=false
+      - DRONE_GOGS=true
+      - DRONE_GOGS_SKIP_VERIFY=false
+      - DRONE_GOGS_SERVER=http://gitea:3000
+      - DRONE_PROVIDER=gogs
+      - DRONE_DATABASE_DATASOURCE=/var/lib/drone/drone.sqlite
+      - DRONE_DATABASE_DRIVER=sqlite3
+      - DRONE_SERVER_PROTO=http
+      - DRONE_RPC_SECRET=ALQU2M0KdptXUdTPKcEw
+      - DRONE_SECRET=ALQU2M0KdptXUdTPKcEw
+      - DRONE_USER_CREATE=username:zzzfree,admin:true  
+  gitea:
+    image: gitea/gitea:latest
+    ports:
+      - "20022:22"
+      - "20080:3000"
+    volumes:
+      - ./data/gitea:/data
+ 
+  drone-agent:
+    image: drone/agent:latest
+    depends_on:
+      - drone-server
+    environment:
+      - DRONE_RPC_SERVER=http://drone-server
+      - DRONE_RPC_SECRET=ALQU2M0KdptXUdTPKcEw
+      - DRONE_DEBUG=true
+      - DOCKER_HOST=tcp://docker-bind:2375
+      - DRONE_SERVER=drone-server:9000
+      - DRONE_SECRET=ALQU2M0KdptXUdTPKcEw
+      - DRONE_MAX_PROCS=5
+  docker-bind:
+     image: docker:dind
+     privileged: true
+    #  command: --storage-driver=overlay
+
+
